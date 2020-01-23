@@ -8,4 +8,4 @@ your username and password. A cookie will be saved.
 - Support for 1920*1080
 
 Example
-![alt text](htps://i.imgur.com/e7TGGOQ.gif)
+![alt text](https://i.imgur.com/e7TGGOQ.gif)
