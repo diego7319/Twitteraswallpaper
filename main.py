@@ -1,32 +1,49 @@
 import mechanicalsoup
-import os
-from requests import Session
-import requests
+import requests,os
 import time
 from re import sub as cleanlines
 import ctypes
-
 from PIL import Image, ImageDraw, ImageFont
-import ClassObjects as ClassObjects
-
+import Twitteraswallpaper.ClassObjects as ClassObjects
+import shutil
+import copy
+import Twitteraswallpaper.utils
 TWITTER_HOME = "https://mobile.twitter.com/home"
 
+
+def fix_string_toScreen(paragraph):
+    position_break = 35
+    if len(paragraph) < position_break:
+        return paragraph
+    num = [pos for pos, char in enumerate(paragraph) if char == " "]
+    if len(num) == 1:
+        paragraph.replace(" ","\n",0)
+        return paragraph
+    status = True
+    while status:
+        position = [x for x in num if x<=position_break]
+        #print (str(x) +" --"+str(x))
+        paragraph = paragraph[:position[-1]]+ "\n" +paragraph[(position[-1]+1):]
+        return paragraph
+
+
 if __name__ == "__main__":
-    conf_file = ClassObjects.config_file()
+    #detect {-}
+    connection_handler = ClassObjects.Connection_handler()
     # Create a browser object
     browser = mechanicalsoup.StatefulBrowser(soup_config={'features': 'lxml'})
     # request Twitter login page
-    if not conf_file.check_conf_file():
+    if not connection_handler.check_conf_file():
         print("Creating a twitter session, user and password will not be stored.")
         username_twitter = input("Enter your username: \n")
         password_twitter = input("Enter your password: \n")
-        created_conf_file = conf_file.create_cookie_twitter(username_twitter,password_twitter)
-        if created_conf_file:
+        connection_newcookie = connection_handler.create_cookie_twitter(username_twitter,password_twitter)
+        if connection_newcookie:
             print("cookie created successfully")
         else:
             print("Error while creating the cookie")
 
-    browser.session.cookies = conf_file.get_cookie_twitter()
+    browser.session.cookies = connection_handler.get_cookie_twitter()
     browser.open(TWITTER_HOME)
     browser.follow_link("/")
     page = browser.get_current_page()
@@ -40,13 +57,17 @@ if __name__ == "__main__":
     #save objects tweet
     tweets_in_list=[]
     tweets_in_list.append(dummy_tweet)
+    #transfer WallpaperEngine
+    d=os.getenv('APPDATA')+"//Microsoft//Windows//Themes//TranscodedWallpaper"
+    shutil.copy(d,"test.png")
+    image = Image.open("test.png").convert('RGB')
     while True:
         browser.open(TWITTER_HOME)
         browser.follow_link("/")
         browser.get_current_page()
         page = browser.get_current_page()
         page.find_all('table', class_='tweet')
-        tweets_in_table = page.find_all('table', class_='tweet')[0:6]
+        tweets_in_table = page.find_all('table', class_='tweet')[0:8]
 
         #First tweet for the next step
         #validate if there's any new tweet (compare tweetid)
@@ -75,8 +96,6 @@ if __name__ == "__main__":
                                   is_retweet.strip(), tweet_id)
                 tweets_in_list.append(tweet_obj)
             #print (len(tweets_in_list))
-            w.add_tweets_toImg(tweets_in_list)
-            w.setWallpaper(str(os.getcwd()+"/file.png"))
+            ht=w.add_tweets_toImg(tweets_in_list, copy.deepcopy(image))
+            w.setWallpaper(str(os.getcwd()+"/background.png"))
         time.sleep(3)
-        #w.setWallpaper("test.png")
-        #ctypes.windll.user32.SystemParametersInfoW(20,0,os.getcwd()+"/test.png",3)
