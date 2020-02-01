@@ -9,3 +9,4 @@ your username and password. A cookie will be saved.
 
 Example
 ![alt text](https://i.imgur.com/e7TGGOQ.gif)
+![Preview](https://i.imgur.com/HVECbtU.gif)
