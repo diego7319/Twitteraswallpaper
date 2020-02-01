@@ -1,9 +1,9 @@
 #cookie
 conf.json
-file.png
+baseWallpaper.png
+newWallpaper.png
 #virtual enviroment directory
 venv
-background.png
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

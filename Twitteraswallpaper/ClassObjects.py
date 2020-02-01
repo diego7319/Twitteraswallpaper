@@ -1,11 +1,9 @@
 import mechanicalsoup
 import json
 import os
+from requests.utils import cookiejar_from_dict
 #from requests import Session
-import requests
-import ctypes
-from PIL import Image, ImageDraw, ImageFont
-import textwrap
+
 
 class Connection_handler():
     def __init__(self):
@@ -18,8 +16,8 @@ class Connection_handler():
         else:
             return False
 
-    def save_cookie_twitter(self,Browser):
-        cookie_dict = Browser.session.cookies.get_dict()
+    def save_cookie_twitter(self,browser):
+        cookie_dict = browser.session.cookies.get_dict()
         with open(self._file_path, 'w') as conffile:
             json.dump(cookie_dict, conffile)
         if self.check_conf_file():
@@ -27,7 +25,7 @@ class Connection_handler():
         else:
             raise Exception("Error while saving file")
 
-    def create_cookie_twitter(self, username, password):
+    def create_cookie_twitter(self, username, password,browser):
         headers = {
             """User-Agent': 'Mozilla/5.0 (compatible; MSIE 10.0; Windows NT 7.0; InfoPath.3; .NET CLR 3.1.40767; Trident/6.0; en-IN)"""
         }
@@ -37,7 +35,6 @@ class Connection_handler():
                 "scribe_log": "",
                 "redirect_after_login": "/",
                 "remember_me": "1"}
-        browser = mechanicalsoup.StatefulBrowser(soup_config={'features': 'lxml'})
         try:
             browser.open(URL_TWITTER_LOGIN)
             browser.select_form('form[action="https://twitter.com/sessions"]')
@@ -46,20 +43,24 @@ class Connection_handler():
             response = browser.submit_selected()
             # get current page output
             response_after_login = browser.get_current_page()
-            browser.follow_link("/")
-            if self.save_cookie_twitter(browser):
-                return True
+            #print(browser.launch_browser())
+            if browser.get_url() == "https://twitter.com/":
+                browser.follow_link("/")
+                if self.save_cookie_twitter(browser):
+                    return True
+                else:
+                    raise Exception("Error while saving the cookie. Check directory/files permissions.")
+            else:
+                return False
         except:
-            return "Error while creating session cookie, check internet connection."
+            raise Exception("Error while creating session , check internet connection.")
 
     def get_cookie_twitter(self):
-        if self.check_conf_file():
-            from requests.utils import cookiejar_from_dict
-            cookiefileloaded = ""
-            from requests.utils import cookiejar_from_dict
-            cookiefileloaded = json.load( open(self._file_path))
-            return cookiejar_from_dict(cookiefileloaded)
-        else:
+        try:
+            if self.check_conf_file():
+                cookiefileloaded = json.load(open(self._file_path))
+                return cookiejar_from_dict(cookiefileloaded)
+        except:
             return False
 
 
@@ -75,22 +76,3 @@ class Tweet:
 
     def get_tweetid(self):
         return self.tweet_id
-"""
-    #adds jumplines to adjust tweets to the screen (currently hardcoded for fullhd)
-    def fix_string_toScreen(self, charBreak):
-        #charBreak is the chart's position where a jumpline will be added
-        paragraph = self.text_body
-        charBreak = 35
-        if len(paragraph) < charBreak:
-            return paragraph
-        num = [pos for pos, char in enumerate(paragraph) if char == " "]
-        if len(num) == 1:
-            paragraph.replace(" ","\n",0)
-            return paragraph
-        status = True
-        while status:
-            position = [x for x in num if x <= charBreak]
-            #print (str(x) +" --"+str(x))
-            paragraph = paragraph[:position[-1]]+ "\n" +paragraph[(position[-1]+1):]
-            return paragraph
-"""
